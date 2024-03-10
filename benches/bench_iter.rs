@@ -1,7 +1,7 @@
 #![feature(test)]
 extern crate test;
 
-use bench_llvm::VM;
+use bench_llvm::{CodeGen, VM};
 use test::Bencher;
 
 const MOD: i64 = 100000007;
@@ -16,6 +16,32 @@ fn bench_native(b: &mut Bencher) {
             a = (a * i) % MOD;
         }
         assert_eq!(a, ANS);
+    })
+}
+
+#[bench]
+fn bench_jit(b: &mut Bencher) {
+    use inkwell::{context::Context, OptimizationLevel};
+
+    let context = Context::create();
+    let module = context.create_module("iter");
+    let execution_engine = module
+        .create_jit_execution_engine(OptimizationLevel::Aggressive)
+        .unwrap();
+    let codegen = CodeGen {
+        context: &context,
+        module,
+        builder: context.create_builder(),
+        execution_engine,
+    };
+
+    let iter = codegen.jit_compile_iter();
+
+    b.iter(|| {
+        unsafe {
+            assert_eq!(ANS, iter.call());
+            // assert_eq!(sum.call(x, y, z), x + y + z);
+        }
     })
 }
 
