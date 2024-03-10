@@ -1,6 +1,5 @@
-use std::io::Cursor;
-
-use bytes::{Buf, Bytes};
+// use bytes::Buf;
+use crate::FastCursor;
 use smallvec::SmallVec;
 
 #[repr(u8)]
@@ -29,7 +28,8 @@ impl VM {
     }
 
     pub fn eval(&mut self, bytecode: &[u8]) {
-        let mut bytecode = Cursor::new(bytecode);
+        // let mut bytecode = Cursor::new(bytecode);
+        let mut bytecode = FastCursor::new(bytecode);
 
         loop {
             match bytecode.get_u8() {
@@ -52,12 +52,12 @@ impl VM {
                 }
                 4 => {
                     let pos = bytecode.get_u8();
-                    bytecode.set_position(pos as u64);
+                    bytecode.set_position(pos as usize);
                 }
                 5 => {
                     let pos = bytecode.get_u8();
                     if self.stack.pop().unwrap() == 0 {
-                        bytecode.set_position(pos as u64);
+                        bytecode.set_position(pos as usize);
                     }
                 }
                 6 => {
